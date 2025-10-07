@@ -126,8 +126,8 @@ func (r *mutationResolver) DeleteOrder(ctx context.Context, orderID string) (boo
 		return false, err
 	}
 
-	// Check if the logged-in user is the author of the burger day
-	if burgerDay.AuthorId != userCtx.ID {
+	// Check if the logged-in user is the author of the burger day or the owner of the order
+	if burgerDay.AuthorId != userCtx.ID && order.UserId != userCtx.ID {
 		return false, errors.New("only the owner of the burger day can delete orders")
 	}
 
