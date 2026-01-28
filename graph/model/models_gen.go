@@ -3,6 +3,7 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -88,7 +89,7 @@ func (e SpecialOrders) String() string {
 	return string(e)
 }
 
-func (e *SpecialOrders) UnmarshalGQL(v interface{}) error {
+func (e *SpecialOrders) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -103,4 +104,18 @@ func (e *SpecialOrders) UnmarshalGQL(v interface{}) error {
 
 func (e SpecialOrders) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *SpecialOrders) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e SpecialOrders) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

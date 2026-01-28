@@ -67,6 +67,7 @@ type Mutation {
 	update_user(name: String, email: String, phoneNumber: String): User!
 	delete_burger_day(burgerDayId: ID!): String
 	delete_order(orderId: ID!): Boolean!
+	consolidate_emails: Boolean!
 }
 
 type Order {
@@ -88,6 +89,7 @@ type Query {
 	user(id: ID!): User
 	users: [User!]!
 	me: User
+	check_email: [String!]!
 }
 
 type Subscription {
