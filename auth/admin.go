@@ -8,10 +8,7 @@ import (
 
 // defaultAdminEmails is the built-in admin list, used when ADMIN_EMAILS is unset.
 var defaultAdminEmails = []string{
-	"simon.egeberg@twoday.com",
-	"seg@it-minds.dk",
-	"simon.bundgaard-egeberg@twoday.com",
-	"katharina.vu@twoday.com",
+	"simon.bundgaard-egeberg@it-minds.dk",
 }
 
 // AdminEmails returns the lower-cased list of admin emails. Set ADMIN_EMAILS to a
