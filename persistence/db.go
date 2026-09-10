@@ -78,11 +78,12 @@ func UsersToModels(users []*User) []*model.User {
 
 func BurgerDayToModel(burgerDay *BurgerDay) *model.BurgerDay {
 	return &model.BurgerDay{
-		ID:       burgerDay.ID,
-		Date:     burgerDay.Date,
-		AuthorId: burgerDay.AuthorId,
-		Price:    burgerDay.Price,
-		Closed:   burgerDay.Closed,
+		ID:            burgerDay.ID,
+		Date:          burgerDay.Date,
+		AuthorId:      burgerDay.AuthorId,
+		Price:         burgerDay.Price,
+		Closed:        burgerDay.Closed,
+		EstimatedTime: burgerDay.EstimatedTime,
 	}
 }
 

@@ -86,6 +86,12 @@ func Middleware(db *gorm.DB) func(http.Handler) http.Handler {
 	}
 }
 
+// WithUser returns a context carrying the given user, as Middleware would. It lets
+// tests and other entry points drive resolvers without minting a JWT.
+func WithUser(ctx context.Context, user *persistence.User) context.Context {
+	return context.WithValue(ctx, userCtxKey, user)
+}
+
 // ForContext finds the user from the context. REQUIRES Middleware to have run.
 func ForContext(ctx context.Context) *persistence.User {
 	raw, _ := ctx.Value(userCtxKey).(*persistence.User)

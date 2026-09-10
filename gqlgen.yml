@@ -92,6 +92,16 @@ models:
         resolver: true
       author:
         resolver: true
+      ordersCount:
+        resolver: true
+      weekday:
+        resolver: true
+      offSchedule:
+        resolver: true
+  User:
+    fields:
+      isAdmin:
+        resolver: true
   Order:
     fields:
       burgerDay:

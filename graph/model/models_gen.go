@@ -37,6 +37,16 @@ type Consumer struct {
 	User            *User `json:"user"`
 }
 
+// Outcome of deleting a single burger day. One of these is returned per requested id.
+type DeleteBurgerDayResult struct {
+	ID      string `json:"id"`
+	Deleted bool   `json:"deleted"`
+	// Human-readable reason the day was not deleted. Null when `deleted` is true.
+	Error *string `json:"error,omitempty"`
+	// Number of orders removed along with the day. 0 when `deleted` is false.
+	OrdersDeleted int `json:"ordersDeleted"`
+}
+
 type Mutation struct {
 }
 
@@ -51,6 +61,9 @@ type User struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
 	PhoneNumber *string `json:"phoneNumber,omitempty"`
+	// True when this user may delete any burger day. Non-admins may only delete
+	// burger days they authored.
+	IsAdmin bool `json:"isAdmin"`
 }
 
 type SpecialOrders string
@@ -103,7 +116,7 @@ func (e *SpecialOrders) UnmarshalGQL(v any) error {
 }
 
 func (e SpecialOrders) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
+	_, _ = fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 func (e *SpecialOrders) UnmarshalJSON(b []byte) error {

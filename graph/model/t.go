@@ -19,4 +19,9 @@ type BurgerDay struct {
 	EstimatedTime string   `json:"estimatedDeliveryTime"`
 	Price         float64  `json:"price"`
 	Orders        []*Order `json:"orders"`
+
+	// OrdersCountCache is filled in by list resolvers that batch-load the counts for
+	// every day up front. When nil the ordersCount resolver falls back to its own
+	// query, so single-day lookups keep working.
+	OrdersCountCache *int `json:"-"`
 }

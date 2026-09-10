@@ -39,18 +39,29 @@ func UserStatsToConsumerModel(userStats []*UserBurgerStats) []*model.Consumer {
 	return consumers
 }
 
-func CalculateBurgerStats(db *gorm.DB) (*BurgerStats, error) {
+// CalculateBurgerStats aggregates burger day statistics. Burger days whose id is in
+// excludedDayIDs are left out entirely, along with their orders, so callers can ask
+// for stats that ignore off-schedule (non-Thursday) test days without deleting them.
+func CalculateBurgerStats(db *gorm.DB, excludedDayIDs []string) (*BurgerStats, error) {
 	var totalOrders int64
 	var totalBurgerDays int64
 	var userStats []*UserBurgerStats
 
+	// excludeOrders / excludeDays narrow each query to the days that count.
+	excludeOrders := func(q *gorm.DB) *gorm.DB { return q }
+	excludeDays := excludeOrders
+	if len(excludedDayIDs) > 0 {
+		excludeOrders = func(q *gorm.DB) *gorm.DB { return q.Where("orders.burger_day_id NOT IN ?", excludedDayIDs) }
+		excludeDays = func(q *gorm.DB) *gorm.DB { return q.Where("id NOT IN ?", excludedDayIDs) }
+	}
+
 	// Calculate total number of orders
-	if err := db.Model(&persistence.Order{}).Count(&totalOrders).Error; err != nil {
+	if err := excludeOrders(db.Model(&persistence.Order{})).Count(&totalOrders).Error; err != nil {
 		return nil, err
 	}
 
 	// Calculate total number of unique burger days
-	if err := db.Model(&persistence.BurgerDay{}).Distinct("id").Count(&totalBurgerDays).Error; err != nil {
+	if err := excludeDays(db.Model(&persistence.BurgerDay{})).Distinct("id").Count(&totalBurgerDays).Error; err != nil {
 		return nil, err
 	}
 
@@ -65,10 +76,10 @@ func CalculateBurgerStats(db *gorm.DB) (*BurgerStats, error) {
 	}
 
 	var queryResults []userStatsQueryResult
-	if err := db.Table("orders").
+	if err := excludeOrders(db.Table("orders").
 		Select("users.id as user_id, users.name, users.email, count(distinct orders.id) as total_orders, count(distinct burger_day_id) as total_burger_days").
 		Joins("join users on users.id = orders.user_id").
-		Group("users.id, users.name, users.email").
+		Group("users.id, users.name, users.email")).
 		Find(&queryResults).Error; err != nil {
 		return nil, err
 	}

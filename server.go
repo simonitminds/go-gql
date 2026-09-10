@@ -8,13 +8,16 @@ import (
 	"net/http"
 	"os"
 	"time"
+	// Embed the IANA zone database so Europe/Copenhagen resolves in the scratch/alpine
+	// runtime image, which ships no system zoneinfo.
+	_ "time/tzdata"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	websocket "github.com/coder/websocket"
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/websocket"
 )
 
 const defaultPort = "8080"
@@ -51,16 +54,14 @@ func main() {
 	// Create your GraphQL server handler
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
-	// Add WebSocket transport support for subscriptions
+	// Add WebSocket transport support for subscriptions.
+	// gqlgen >= 0.17.95 accepts connections through a pluggable implementation backed
+	// by coder/websocket instead of a gorilla Upgrader. InsecureSkipVerify keeps the
+	// previous "allow every origin" behaviour, matching the wide-open CORS policy above.
 	srv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
-		Upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool {
-				// Allow all connections
-				return true
-			},
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
+		Implementation: transport.CoderWebsocketImplementation{
+			AcceptOptions: websocket.AcceptOptions{InsecureSkipVerify: true},
 		},
 	})
 	srv.AddTransport(transport.Options{})

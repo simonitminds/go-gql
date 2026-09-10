@@ -37,6 +37,27 @@ type BurgerDay {
 	orders: [Order!]!
 	ordersCount: Int!
 	price: Float!
+	"""
+	Day of week derived from `date` (not from any creation timestamp), evaluated in
+	Europe/Copenhagen: 0 = Sunday ... 4 = Thursday ... 6 = Saturday.
+	Returns -1 when the stored date cannot be parsed.
+	"""
+	weekday: Int!
+	"""
+	True when this burger day is not on a Thursday, i.e. `weekday != 4`.
+	Off-schedule days are almost always test runs that skew `burgerStats`.
+	"""
+	offSchedule: Boolean!
+}
+
+"""Outcome of deleting a single burger day. One of these is returned per requested id."""
+type DeleteBurgerDayResult {
+	id: ID!
+	deleted: Boolean!
+	"""Human-readable reason the day was not deleted. Null when `deleted` is true."""
+	error: String
+	"""Number of orders removed along with the day. 0 when `deleted` is false."""
+	ordersDeleted: Int!
 }
 
 type BurgerStats {
@@ -55,6 +76,10 @@ type Mutation {
 	close_burger_day(burgerDayId: ID!): BurgerDay!
 	create_user(name: String!, email: String!): User!
 	orderBurger(burgerDayId: ID!, specialRequest: [SpecialOrders!]!): Order!
+	"""
+	Toggles the paid flag on an order. `user_id` is ignored — it is a legacy argument
+	kept for backwards compatibility and may be passed as -1.
+	"""
 	pay_order(order_id: ID!, user_id: ID!): Order!
 	ringBurgerBell(message: String!): Boolean!
 	start_burger_day: BurgerDay!
@@ -65,7 +90,19 @@ type Mutation {
 		closed: Boolean
 	): BurgerDay!
 	update_user(name: String, email: String, phoneNumber: String): User!
+	"""
+	Deletes a single burger day and its orders. Throws when the caller is not the
+	author of the day and not an admin. Prefer `delete_burger_days`, which reports
+	refusals as data instead of throwing.
+	"""
 	delete_burger_day(burgerDayId: ID!): String
+	"""
+	Deletes up to 100 burger days and their orders, one transaction per day.
+	Returns exactly one result per requested id, in the same order as the input;
+	a refused or missing id yields `deleted: false` with an `error` rather than
+	failing the whole call. Passing more than 100 ids is a GraphQL error.
+	"""
+	delete_burger_days(burgerDayIds: [ID!]!): [DeleteBurgerDayResult!]!
 	delete_order(orderId: ID!): Boolean!
 	consolidate_emails: Boolean!
 }
@@ -81,8 +118,16 @@ type Order {
 type Query {
 	accumulated_orders: AccumulatedOrders
 	burger_day(id: ID!): BurgerDay
-	burger_days: [BurgerDay!]!
-	burgerStats: BurgerStats!
+	"""
+	All burger days, sorted by `date` ascending.
+	With `offScheduleOnly: true` only days that are not on a Thursday are returned.
+	"""
+	burger_days(offScheduleOnly: Boolean = false): [BurgerDay!]!
+	"""
+	With `includeOffSchedule: false`, non-Thursday burger days and their orders are
+	excluded from `totalBurgerDays`, `totalOrders` and every `topConsumers` entry.
+	"""
+	burgerStats(includeOffSchedule: Boolean = true): BurgerStats!
 	order(id: ID!): Order
 	orders: [Order!]!
 	todays_burgers: BurgerDay
@@ -101,4 +146,9 @@ type User {
 	id: ID!
 	name: String!
 	phoneNumber: String
+	"""
+	True when this user may delete any burger day. Non-admins may only delete
+	burger days they authored.
+	"""
+	isAdmin: Boolean!
 }

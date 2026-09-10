@@ -1,5 +1,5 @@
 # Start from the official Go image to ensure we have a full Go environment.
-FROM golang:1.25 as builder
+FROM golang:1.26 AS builder
 
 # Set the working directory inside the container.
 WORKDIR /app
